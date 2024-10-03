@@ -1,57 +1,81 @@
-
-namespace GitViz.Server;
-
+namespace GitViz;
 public class Program
 {
+    #region Methods..
     public static void Main(string[] args)
     {
+        LogLevel loggingLevel = LogLevel.Error;
+
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        builder.Services.AddAuthorization();
+        // Settings
+        builder.Configuration.Sources.Clear();
+        builder.Configuration.AddJsonFile("appsettings.json");
+        builder.Configuration.AddEnvironmentVariables();
+        builder.Configuration.AddUserSecrets<Program>();
+        builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
+        //builder.Services.Configure<ApplicationConfiguration>(builder.Configuration);
 
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        // Logging
+        //builder.Services.AddLogging(loggingBuilder =>
+        //{
+        //    loggingBuilder.AddProvider(new SqlLoggerProvider((category, level) => level >= loggingLevel, GetMainConnectionString(builder)));
+        //});
+
+        // Services
+        builder.Services.AddServiceModule<ServicesServiceModule>();
+        builder.Services.AddServiceModule<HttpServiceModule>();
+        builder.Services.AddServiceModule<SwaggerServiceModule>();
+
+        // Web Host
+        builder.WebHost.ConfigureKestrel(ConfigureKestrelHost);
 
         var app = builder.Build();
 
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-
-        app.UseHttpsRedirection();
-
-        app.UseAuthorization();
-
-        var summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-        app.MapGet("/weatherforecast", (HttpContext httpContext) =>
-        {
-            var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                {
-                    Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    TemperatureC = Random.Shared.Next(-20, 55),
-                    Summary = summaries[Random.Shared.Next(summaries.Length)]
-                })
-                .ToArray();
-            return forecast;
-        })
-        .WithName("GetWeatherForecast")
-        .WithOpenApi();
-
-        app.MapFallbackToFile("/index.html");
+        ConfigureApplication(app);
+        loggingLevel = LogLevel.Information;
 
         app.Run();
     }
+
+    private static void ConfigureApplication(WebApplication app)
+    {
+        app.UseRateLimiter();
+        app.UseExceptionHandler("/error");
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+            });
+        }
+
+        app.UseForwardedHeaders();
+        //app.UseHttpsRedirection();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.UseRouting();
+
+        app.UseCors("AllowAll");
+        //app.UseAuthentication();
+        app.UseAuthorization();
+
+        //app.UseEndpoints(endpoints =>
+        //{
+        //    MessageEndpoints.Register(endpoints);
+        //    UserEndpoints.Register(endpoints);
+        //    SystemEndpoints.Register(endpoints);
+        //});
+    }
+
+    private static void ConfigureKestrelHost(WebHostBuilderContext hostContext, KestrelServerOptions options)
+    {
+        options.ListenAnyIP(5110);
+        options.ListenAnyIP(5111, options => options.UseHttps());
+    } 
+    #endregion Methods..
 }
