@@ -17,6 +17,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@primevue/themes": "^4.0.7",
     "axios": "^1.7.7",
+    "d3": "^7.9.0",
     "normalize.css": "^8.0.1",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.7",
