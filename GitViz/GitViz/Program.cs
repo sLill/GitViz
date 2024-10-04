@@ -1,3 +1,5 @@
+using GitViz.Api;
+
 namespace GitViz;
 public class Program
 {
@@ -64,12 +66,10 @@ public class Program
         //app.UseAuthentication();
         app.UseAuthorization();
 
-        //app.UseEndpoints(endpoints =>
-        //{
-        //    MessageEndpoints.Register(endpoints);
-        //    UserEndpoints.Register(endpoints);
-        //    SystemEndpoints.Register(endpoints);
-        //});
+        app.UseEndpoints(endpoints =>
+        {
+            RepoEndpoints.Register(endpoints);
+        });
     }
 
     private static void ConfigureKestrelHost(WebHostBuilderContext hostContext, KestrelServerOptions options)

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "GitViz.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:29248;http://localhost:29249"
+    }
+  }
+}
