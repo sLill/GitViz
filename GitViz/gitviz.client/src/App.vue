@@ -37,7 +37,7 @@
     <div class="wrapper">
         <div v-if="viewMode == 'init'" class="init-container"> 
             <div style="font-size: 20px;">Local repo path</div>
-            <InputText style="width: 100%" :value="localRepoPath"></InputText>
+            <InputText style="width: 100%" v-model="localRepoPath"></InputText>
             <Button style="width: 100px; align-self: center" @click="start">Start</Button>
         </div>
 

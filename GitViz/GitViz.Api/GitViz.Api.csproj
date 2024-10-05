@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GitViz.Common\GitViz.Common.csproj" />
+    <ProjectReference Include="..\GitViz.Core\GitViz.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

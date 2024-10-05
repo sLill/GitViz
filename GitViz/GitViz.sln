@@ -10,6 +10,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitViz.Api", "GitViz.Api\Gi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitViz", "GitViz\GitViz.csproj", "{E59D398D-740E-454C-9AC7-CEFB8372BB41}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitViz.Core", "GitViz.Core\GitViz.Core.csproj", "{992668DC-2715-435E-BFD3-84452439168F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{E59D398D-740E-454C-9AC7-CEFB8372BB41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E59D398D-740E-454C-9AC7-CEFB8372BB41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E59D398D-740E-454C-9AC7-CEFB8372BB41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{992668DC-2715-435E-BFD3-84452439168F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{992668DC-2715-435E-BFD3-84452439168F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{992668DC-2715-435E-BFD3-84452439168F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{992668DC-2715-435E-BFD3-84452439168F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

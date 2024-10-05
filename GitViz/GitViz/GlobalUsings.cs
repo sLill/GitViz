@@ -7,3 +7,4 @@ global using Microsoft.Extensions.Options;
 global using System.Runtime.InteropServices;
 global using System.Threading.RateLimiting;
 global using GitViz.Common;
+global using GitViz.Core;
