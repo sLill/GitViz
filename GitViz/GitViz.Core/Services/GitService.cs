@@ -11,7 +11,7 @@ public class GitService : IGitService
     #endregion Constructors..
 
     #region Methods..
-    public Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetRepositoryChangesByMonth(string localRepositoryPath)
-        => GitUtils.GetMonthlyChanges(localRepositoryPath);
+    public Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetRepositoryChangesByMonth(string localRepositoryPath, string? branchName = null)
+        => GitUtils.GetMonthlyChanges(localRepositoryPath, branchName);
     #endregion Methods..
 }

@@ -85,7 +85,7 @@ public static class GitUtils
         }
     }
 
-    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetMonthlyChanges(string repositoryPath, bool excludeWhitespace = true)
+    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetMonthlyChanges(string repositoryPath, string? branchName = null, bool excludeWhitespace = true)
     {
         //var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -94,7 +94,7 @@ public static class GitUtils
             var monthlyChanges = new ConcurrentDictionary<DateTime, (int LinesAdded, int LinesDeleted)>();
             var compareOptions = new CompareOptions { Similarity = new SimilarityOptions() { WhitespaceMode = excludeWhitespace ? WhitespaceMode.IgnoreAllWhitespace : WhitespaceMode.DontIgnoreWhitespace } };
 
-            Parallel.ForEach(repository.Commits, commit =>
+            Parallel.ForEach(branchName == null ? repository.Commits : repository.Branches[branchName].Commits, commit =>
             {
                 var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
 
@@ -102,7 +102,7 @@ public static class GitUtils
                 if (parent == null)
                 {
                     // Initial commit
-                    var initialLines = CountLinesInCommit(repository, commit);
+                    var initialLines = GetCommitLineCount(commit);
                     monthlyChanges.AddOrUpdate(commitMonth,
                         (key) => (initialLines, 0),
                         (key, old) => (old.LinesAdded + initialLines, old.LinesDeleted));
@@ -125,7 +125,7 @@ public static class GitUtils
         }
     }
 
-    private static int CountLinesInCommit(Repository repo, Commit commit)
+    private static int GetCommitLineCount(Commit commit)
     {
         int totalLines = 0;
         foreach (var entry in commit.Tree)

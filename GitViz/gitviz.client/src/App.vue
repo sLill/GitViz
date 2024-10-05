@@ -11,13 +11,14 @@
 
     const viewMode = ref('init');
     const chartComponent = ref(null);
+    const branchName = ref(null);
     const localRepoPath = ref(null);
 
     // Methods
     const start = async () => {
         viewMode.value = 'loading';
 
-        var result = await endpointService.getData(`/api/v1/repo/getLinesChangedByMonth?uri=${localRepoPath.value}`);
+        var result = await endpointService.getData(`/api/v1/repo/getLinesChangedByMonth?localRepoPath=${localRepoPath.value}&branchName=${branchName.value}`);
         // var result = await endpointService.getData('/api/v1/repo/ping');
         if (result)
             showChart();
@@ -36,8 +37,13 @@
 <template>
     <div class="wrapper">
         <div v-if="viewMode == 'init'" class="init-container"> 
-            <div style="font-size: 20px;">Local repo path</div>
+
+            <div style="font-size: 20px;">Local Repo Path</div>
             <InputText style="width: 100%" v-model="localRepoPath"></InputText>
+
+            <div style="font-size: 20px;">Branch Name (optional)</div>
+            <InputText style="width: 100%" v-model="branchName"></InputText>
+
             <Button style="width: 100px; align-self: center" @click="start">Start</Button>
         </div>
 

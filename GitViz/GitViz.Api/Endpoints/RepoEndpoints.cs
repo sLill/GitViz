@@ -29,14 +29,15 @@ public static class RepoEndpoints
 
     public static void GetLinesChangedByMonth(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet($"{_basePath}/getLinesChangedByMonth", async ([FromQuery] string uri,
+        endpoints.MapGet($"{_basePath}/getLinesChangedByMonth", async ([FromQuery] string localRepoPath,
+                                                                       [FromQuery] string? branchName,
                                                                        [FromServices] IGitService gitService) =>
         {
             var httpStatusCode = HttpStatusCode.OK;
 
             try
             {
-                var changesByMonth = gitService.GetRepositoryChangesByMonth(uri);
+                var changesByMonth = gitService.GetRepositoryChangesByMonth(localRepoPath, branchName);
             }
             catch (Exception ex)
             {
