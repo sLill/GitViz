@@ -1,6 +1,6 @@
 <script setup>
     import { ref } from 'vue';
-    import D3Chart from '/src/components/D3Chart.vue';
+    import D3RepoLineChangesOverTime from '/src/components/D3/D3RepoLineChangesOverTime.vue';
     import useEndpointService from './composables/services/useEndpointService.js';
     import useDialogService from './composables/services/useDialogService.js';
     import { useToast } from 'primevue/usetoast';
@@ -10,25 +10,48 @@
     const toast = useToast();
 
     const viewMode = ref('init');
-    const chartComponent = ref(null);
-    const branchName = ref(null);
+    const chartData = ref(null);
+    
     const localRepoPath = ref(null);
+    const branchName = ref(null);
+    const startDate = ref();
+    const endDate = ref();
+    const fileExtensions = ref(null);
 
     // Methods
     const start = async () => {
         viewMode.value = 'loading';
 
-        var result = await endpointService.getData(`/api/v1/repo/getLinesChangedByMonth?localRepoPath=${localRepoPath.value}&branchName=${branchName.value}`);
-        // var result = await endpointService.getData('/api/v1/repo/ping');
+        let uri = `/api/v1/repo/getLinesChangedByMonth?localRepoPath=${localRepoPath.value}`;
+        
+        if (branchName.value)
+            uri += `&branchName=${branchName.value}`;
+
+        if (startDate.value)
+            uri += `&startDate=${startDate.value.toISOString()}`;
+
+        if (endDate.value)
+            uri += `&endDate=${endDate.value.toISOString()}`;
+
+        if (fileExtensions.value) {
+            fileExtensions.value.split(" ").forEach(extension => {
+                uri += `&fileExtensions=${extension}`;
+            });
+        }
+
+        const result = await endpointService.getData(uri);
         if (result)
-            showChart();
+            showChart(result.data.json);
         else {
             toast.add({ severity: 'error', summary: null, detail: 'Repo analysis failed', life: 3000 });
             viewMode.value = 'init';
         }
     };
 
-    const showChart = () => {
+    const showChart = (json) => {
+        const resultJson = JSON.parse(json);
+        chartData.value = resultJson;
+
         viewMode.value = 'stats';
     };
 
@@ -44,6 +67,14 @@
             <div style="font-size: 20px;">Branch Name (optional)</div>
             <InputText style="width: 100%" v-model="branchName"></InputText>
 
+            <div style="font-size: 20px;">File Extensions (space delimited. default: all)</div>
+            <InputText style="width: 100%" v-model="fileExtensions"></InputText>
+
+            <div style="display: flex; gap: 10px">
+                <DatePicker placeholder="Start Date (optional)" v-model="startDate" />
+                <DatePicker placeholder="End Date (optional)" v-model="endDate" />
+            </div>
+
             <Button style="width: 100px; align-self: center" @click="start">Start</Button>
         </div>
 
@@ -52,7 +83,7 @@
         </div>
 
         <div v-if="viewMode == 'stats'" class="stats-container">
-            <D3Chart ref="chartComponent" />
+            <D3RepoLineChangesOverTime :data="chartData" />
         </div>
     </div>
 

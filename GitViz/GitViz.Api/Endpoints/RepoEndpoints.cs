@@ -31,20 +31,23 @@ public static class RepoEndpoints
     {
         endpoints.MapGet($"{_basePath}/getLinesChangedByMonth", async ([FromQuery] string localRepoPath,
                                                                        [FromQuery] string? branchName,
+                                                                       [FromQuery] DateTimeOffset? startDate,
+                                                                       [FromQuery] DateTimeOffset? endDate,
+                                                                       [FromQuery] string[]? fileExtensions,
                                                                        [FromServices] IGitService gitService) =>
         {
             var httpStatusCode = HttpStatusCode.OK;
+            object? responseData = null;
 
             try
             {
-                var changesByMonth = gitService.GetRepositoryChangesByMonth(localRepoPath, branchName);
+                var changesByMonth = gitService.GetRepositoryChangesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
+                responseData = new GetLinesChangedByMonthResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
             }
             catch (Exception ex)
             {
                 httpStatusCode = HttpStatusCode.InternalServerError;
             }
-
-            object? responseData = new GetLinesChangedByMonthResponse() { Json = "" };
 
             return Results.Json(responseData, statusCode: (int)httpStatusCode);
         })

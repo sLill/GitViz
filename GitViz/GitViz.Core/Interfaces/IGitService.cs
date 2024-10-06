@@ -2,6 +2,7 @@
 public interface IGitService
 {
     #region Methods..
-    Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetRepositoryChangesByMonth(string localRepositoryPath, string? branchName = null);
+    Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetRepositoryChangesByMonth(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+        string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true);
     #endregion Methods..
 }

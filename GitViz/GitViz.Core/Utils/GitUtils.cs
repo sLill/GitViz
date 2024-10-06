@@ -85,41 +85,52 @@ public static class GitUtils
         }
     }
 
-    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetMonthlyChanges(string repositoryPath, string? branchName = null, bool excludeWhitespace = true)
+    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetMonthlyChanges(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+        string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
     {
-        //var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
         using (var repository = new Repository(repositoryPath))
         {
             var monthlyChanges = new ConcurrentDictionary<DateTime, (int LinesAdded, int LinesDeleted)>();
             var compareOptions = new CompareOptions { Similarity = new SimilarityOptions() { WhitespaceMode = excludeWhitespace ? WhitespaceMode.IgnoreAllWhitespace : WhitespaceMode.DontIgnoreWhitespace } };
 
-            Parallel.ForEach(branchName == null ? repository.Commits : repository.Branches[branchName].Commits, commit =>
+            startDate = startDate ?? DateTimeOffset.MinValue;
+            endDate = endDate ?? DateTimeOffset.MaxValue;
+
+            var filteredCommits = branchName == null 
+                ? repository.Commits.Where(x => x.Author.When >= startDate && x.Author.When <= endDate)
+                : repository.Branches[branchName].Commits.Where(x => x.Author.When >= startDate && x.Author.When <= endDate);
+
+            foreach (var commit in filteredCommits)
             {
-                var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
-
-                var parent = commit.Parents.FirstOrDefault();
-                if (parent == null)
+                try
                 {
-                    // Initial commit
-                    var initialLines = GetCommitLineCount(commit);
-                    monthlyChanges.AddOrUpdate(commitMonth,
-                        (key) => (initialLines, 0),
-                        (key, old) => (old.LinesAdded + initialLines, old.LinesDeleted));
+                    var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
+
+                    var parent = commit.Parents.FirstOrDefault();
+                    if (parent == null)
+                    {
+                        // Initial commit
+                        var initialLines = GetCommitLineCount(commit);
+                        monthlyChanges.AddOrUpdate(commitMonth,
+                            (key) => (initialLines, 0),
+                            (key, old) => (old.LinesAdded + initialLines, old.LinesDeleted));
+                    }
+                    else
+                    {
+                        var patch = repository.Diff.Compare<Patch>(parent.Tree, commit.Tree, compareOptions);
+                        var linesAdded = patch.Where(x => validExtensions == null || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesAdded) ?? 0;
+                        var linesDeleted = patch.Where(x => validExtensions == null || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesDeleted) ?? 0;
+
+                        monthlyChanges.AddOrUpdate(commitMonth,
+                            (key) => (linesAdded, linesDeleted),
+                            (key, old) => (old.LinesAdded + linesAdded, old.LinesDeleted + linesDeleted));
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    var patch = repository.Diff.Compare<Patch>(parent.Tree, commit.Tree, compareOptions);
-                    var linesAdded = patch.Sum(change => change.LinesAdded);
-                    var linesDeleted = patch.Sum(change => change.LinesDeleted);
-
-                    monthlyChanges.AddOrUpdate(commitMonth,
-                        (key) => (linesAdded, linesDeleted),
-                        (key, old) => (old.LinesAdded + linesAdded, old.LinesDeleted + linesDeleted));
+                    
                 }
-            });
-
-            //stopwatch.Stop();
+            }
 
             return new Dictionary<DateTime, (int LinesAdded, int LinesDeleted)>(monthlyChanges.OrderBy(x => x.Key));
         }
@@ -136,6 +147,7 @@ public static class GitUtils
                 totalLines += GetFileLineCount(blob);
             }
         }
+
         return totalLines;
     }
 

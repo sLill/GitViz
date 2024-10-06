@@ -16,13 +16,6 @@ public class Program
         builder.Configuration.AddEnvironmentVariables();
         builder.Configuration.AddUserSecrets<Program>();
         builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
-        //builder.Services.Configure<ApplicationConfiguration>(builder.Configuration);
-
-        // Logging
-        //builder.Services.AddLogging(loggingBuilder =>
-        //{
-        //    loggingBuilder.AddProvider(new SqlLoggerProvider((category, level) => level >= loggingLevel, GetMainConnectionString(builder)));
-        //});
 
         // Services
         builder.Services.AddServiceModule<ServicesServiceModule>();

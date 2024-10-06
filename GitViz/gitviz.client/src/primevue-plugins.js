@@ -30,6 +30,7 @@ import ContextMenu from 'primevue/contextmenu';
 //import DataTable from 'primevue/datatable';
 //import DataView from 'primevue/dataview';
 //import DataViewLayoutOptions from 'primevue/dataviewlayoutoptions';
+import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import Divider from 'primevue/divider';
 //import Dock from 'primevue/dock';
@@ -148,6 +149,7 @@ export default {
         //app.component('DataTable', DataTable);
         //app.component('DataView', DataView);
         //app.component('DataViewLayoutOptions', DataViewLayoutOptions);
+        app.component('DatePicker', DatePicker );
         app.component('Dialog', Dialog);
         app.component('Divider', Divider);
         //app.component('Dock', Dock);

@@ -6,3 +6,4 @@ global using Microsoft.AspNetCore.Routing;
 global using System.Net;
 global using Microsoft.Extensions.DependencyInjection;
 global using GitViz.Core;
+global using Newtonsoft.Json;
