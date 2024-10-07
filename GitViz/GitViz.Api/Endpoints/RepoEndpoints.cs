@@ -10,7 +10,8 @@ public static class RepoEndpoints
     public static void Register(IEndpointRouteBuilder endpoints)
     {
         endpoints.Ping();
-        endpoints.GetLinesChangedByMonth();
+        endpoints.GetOverallVelocity();
+        endpoints.GetAuthorVelocity();
     }
 
     public static void Ping(this IEndpointRouteBuilder endpoints)
@@ -27,9 +28,9 @@ public static class RepoEndpoints
         .WithTags(_tag);
     }
 
-    public static void GetLinesChangedByMonth(this IEndpointRouteBuilder endpoints)
+    public static void GetOverallVelocity(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet($"{_basePath}/getLinesChangedByMonth", async ([FromQuery] string localRepoPath,
+        endpoints.MapGet($"{_basePath}/getOverallVelocity", async ([FromQuery] string localRepoPath,
                                                                        [FromQuery] string? branchName,
                                                                        [FromQuery] DateTimeOffset? startDate,
                                                                        [FromQuery] DateTimeOffset? endDate,
@@ -41,8 +42,8 @@ public static class RepoEndpoints
 
             try
             {
-                var changesByMonth = gitService.GetRepositoryChangesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
-                responseData = new GetLinesChangedByMonthResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
+                var changesByMonth = gitService.GetOverallVelocityByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
+                responseData = new GetOverallVelocityResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
             }
             catch (Exception ex)
             {
@@ -52,8 +53,38 @@ public static class RepoEndpoints
             return Results.Json(responseData, statusCode: (int)httpStatusCode);
         })
         .AllowAnonymous()
-        .Produces<GetLinesChangedByMonthResponse>()
-        .WithName(nameof(GetLinesChangedByMonth))
+        .Produces<GetOverallVelocityResponse>()
+        .WithName(nameof(GetOverallVelocity))
+        .WithTags(_tag);
+    }
+
+    public static void GetAuthorVelocity(this IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapGet($"{_basePath}/getAuthorVelocity", async ([FromQuery] string localRepoPath,
+                                                                       [FromQuery] string? branchName,
+                                                                       [FromQuery] DateTimeOffset? startDate,
+                                                                       [FromQuery] DateTimeOffset? endDate,
+                                                                       [FromQuery] string[]? fileExtensions,
+                                                                       [FromServices] IGitService gitService) =>
+        {
+            var httpStatusCode = HttpStatusCode.OK;
+            object? responseData = null;
+
+            try
+            {
+                var authorChangesByMonth = gitService.GetAuthorVelocitiesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
+                responseData = new GetAuthorVelocityResponse() { Json = JsonConvert.SerializeObject(authorChangesByMonth) };
+            }
+            catch (Exception ex)
+            {
+                httpStatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return Results.Json(responseData, statusCode: (int)httpStatusCode);
+        })
+        .AllowAnonymous()
+        .Produces<GetAuthorVelocityResponse>()
+        .WithName(nameof(GetAuthorVelocity))
         .WithTags(_tag);
     }
     #endregion Methods..

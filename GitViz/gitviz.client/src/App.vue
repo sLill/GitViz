@@ -1,6 +1,7 @@
 <script setup>
     import { ref } from 'vue';
-    import D3RepoLineChangesOverTime from '/src/components/D3/D3RepoLineChangesOverTime.vue';
+    import D3OverallVelocity from '/src/components/D3/D3OverallVelocity.vue';
+    import D3AuthorVelocity from '/src/components/D3/D3AuthorVelocity.vue';
     import useEndpointService from './composables/services/useEndpointService.js';
     import useDialogService from './composables/services/useDialogService.js';
     import { useToast } from 'primevue/usetoast';
@@ -12,6 +13,9 @@
     const viewMode = ref('init');
     const chartData = ref(null);
     
+    const graphOptions = ref([null, 'Overall Velocity', 'Author Velocity']);
+    const selectedGraph = ref(null);
+    
     const localRepoPath = ref(null);
     const branchName = ref(null);
     const startDate = ref();
@@ -22,7 +26,32 @@
     const start = async () => {
         viewMode.value = 'loading';
 
-        let uri = `/api/v1/repo/getLinesChangedByMonth?localRepoPath=${localRepoPath.value}`;
+        const data = await getGraphData();
+        if (data)
+            showChart(data);
+        else {
+            toast.add({ severity: 'error', summary: null, detail: 'Repo analysis failed', life: 3000 });
+            viewMode.value = 'init';
+        }
+    };
+
+    const getGraphData = async () => {
+        let data = null;
+
+        switch (selectedGraph.value) {
+            case 'Overall Velocity':
+                data = await getOverallVelocity();
+            break;
+            case 'Author Velocity':
+                data = await getAuthorVelocity();
+            break;
+        }
+
+        return data;
+    };
+
+    const getOverallVelocity = async () => {
+        let uri = `/api/v1/repo/getOverallVelocity?localRepoPath=${localRepoPath.value}`;
         
         if (branchName.value)
             uri += `&branchName=${branchName.value}`;
@@ -40,13 +69,31 @@
         }
 
         const result = await endpointService.getData(uri);
-        if (result)
-            showChart(result.data.json);
-        else {
-            toast.add({ severity: 'error', summary: null, detail: 'Repo analysis failed', life: 3000 });
-            viewMode.value = 'init';
-        }
+        return result ? result.data.json : null;
     };
+
+    const getAuthorVelocity = async () => {
+        let uri = `/api/v1/repo/getAuthorVelocity?localRepoPath=${localRepoPath.value}`;
+        
+        if (branchName.value)
+            uri += `&branchName=${branchName.value}`;
+
+        if (startDate.value)
+            uri += `&startDate=${startDate.value.toISOString()}`;
+
+        if (endDate.value)
+            uri += `&endDate=${endDate.value.toISOString()}`;
+
+        if (fileExtensions.value) {
+            fileExtensions.value.split(" ").forEach(extension => {
+                uri += `&fileExtensions=${extension}`;
+            });
+        }
+
+        const result = await endpointService.getData(uri);
+        return result ? result.data.json : null;
+    };
+
 
     const showChart = (json) => {
         const resultJson = JSON.parse(json);
@@ -59,6 +106,11 @@
 
 <template>
     <div class="wrapper">
+        <div class="visualization-container">
+            <div style="font-size: 20px;">Visualization</div>
+            <Dropdown style="width: 100%" :options="graphOptions" v-model="selectedGraph" placeholder="Select a Graph"></Dropdown>
+        </div>
+
         <div v-if="viewMode == 'init'" class="init-container"> 
 
             <div style="font-size: 20px;">Local Repo Path</div>
@@ -83,7 +135,8 @@
         </div>
 
         <div v-if="viewMode == 'stats'" class="stats-container">
-            <D3RepoLineChangesOverTime :data="chartData" />
+            <D3OverallVelocity v-if="selectedGraph == 'Overall Velocity'" :data="chartData" />
+            <D3AuthorVelocity v-if="selectedGraph == 'Author Velocity'" :data="chartData" />
         </div>
     </div>
 
@@ -96,16 +149,27 @@
 
 .wrapper {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     flex-wrap: wrap;
-    
+    gap: 15px;
     width: 100%;
     height: 100%;
 }
 
+.visualization-container {
+    display: flex;
+    width: 80%;
+    
+    flex-direction: column;
+    align-items: start;
+    justify-content: left;
+    
+    gap: 15px;
+}
+
 .init-container {
-    width: 50%; 
+    width: 80%;
+
     display: flex; 
     flex-direction: column; 
     /* align-items: center; */
@@ -113,19 +177,19 @@
 }
 
 .loading-container {
-    width: 50%; 
+    width: 80%;
+
     display: flex; 
     flex-direction: column; 
-    gap: 20px; 
     align-items: center;
 }
 
 .stats-container {
     width: 80%;
     height: 80%; 
+    
     display: flex; 
     flex-direction: column; 
-    gap: 20px; 
     align-items: center;
 }
 </style>

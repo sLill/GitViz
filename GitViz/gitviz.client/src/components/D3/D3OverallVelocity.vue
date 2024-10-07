@@ -189,14 +189,14 @@ const drawChart = () => {
     .text(d => d);
 
   // Add chart title
-  svg.append("text")
-    .attr("x", chartWidth / 2)
-    .attr("y", -margin.top / 2)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .style("font-weight", "bold")
-    .style("fill", "white")
-    .text("R50 Code Velocity");
+  // svg.append("text")
+  //   .attr("x", chartWidth / 2)
+  //   .attr("y", -margin.top / 2)
+  //   .attr("text-anchor", "middle")
+  //   .style("font-size", "16px")
+  //   .style("font-weight", "bold")
+  //   .style("fill", "white")
+  //   .text("R50 Code Velocity");
 
   // Add tooltip
   const tooltip = d3.select("body").append("div")

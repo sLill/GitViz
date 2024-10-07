@@ -1,4 +1,6 @@
-﻿namespace GitViz.Core;
+﻿using System.Security.Cryptography;
+
+namespace GitViz.Core;
 public static class GitUtils
 {
     #region Methods..
@@ -85,7 +87,7 @@ public static class GitUtils
         }
     }
 
-    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetMonthlyChanges(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+    public static Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetOverallMonthlyChanges(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
         string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
     {
         using (var repository = new Repository(repositoryPath))
@@ -102,37 +104,78 @@ public static class GitUtils
 
             foreach (var commit in filteredCommits)
             {
-                try
-                {
-                    var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
+                var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
 
-                    var parent = commit.Parents.FirstOrDefault();
-                    if (parent == null)
-                    {
-                        // Initial commit
-                        var initialLines = GetCommitLineCount(commit);
-                        monthlyChanges.AddOrUpdate(commitMonth,
-                            (key) => (initialLines, 0),
-                            (key, old) => (old.LinesAdded + initialLines, old.LinesDeleted));
-                    }
-                    else
-                    {
-                        var patch = repository.Diff.Compare<Patch>(parent.Tree, commit.Tree, compareOptions);
-                        var linesAdded = patch.Where(x => validExtensions == null || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesAdded) ?? 0;
-                        var linesDeleted = patch.Where(x => validExtensions == null || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesDeleted) ?? 0;
+                int linesAdded = 0;
+                int linesDeleted = 0;
 
-                        monthlyChanges.AddOrUpdate(commitMonth,
-                            (key) => (linesAdded, linesDeleted),
-                            (key, old) => (old.LinesAdded + linesAdded, old.LinesDeleted + linesDeleted));
-                    }
-                }
-                catch (Exception ex)
+                var parent = commit.Parents.FirstOrDefault();
+                if (parent == null)
                 {
-                    
+                    // Initial commit
+                    linesAdded = GetCommitLineCount(commit);
                 }
+                else
+                {
+                    var patch = repository.Diff.Compare<Patch>(parent.Tree, commit.Tree, compareOptions);
+                    linesAdded = patch.Where(x => (validExtensions == null || !validExtensions.Any()) || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesAdded) ?? 0;
+                    linesDeleted = patch.Where(x => (validExtensions == null || !validExtensions.Any()) || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesDeleted) ?? 0;
+                }
+
+                monthlyChanges.AddOrUpdate(commitMonth,
+                        (key) => (linesAdded, linesDeleted),
+                        (key, old) => (old.LinesAdded + linesAdded, old.LinesDeleted + linesDeleted));
             }
 
             return new Dictionary<DateTime, (int LinesAdded, int LinesDeleted)>(monthlyChanges.OrderBy(x => x.Key));
+        }
+    }
+
+    public static Dictionary<DateTime, Dictionary<string, (int LinesAdded, int LinesDeleted)>> GetAuthorMonthlyChanges(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+    string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
+    {
+        using (var repository = new Repository(repositoryPath))
+        {
+            var authorMonthlyChanges = new Dictionary<DateTime, Dictionary<string, (int LinesAdded, int LinesDeleted)>>();
+            var compareOptions = new CompareOptions { Similarity = new SimilarityOptions() { WhitespaceMode = excludeWhitespace ? WhitespaceMode.IgnoreAllWhitespace : WhitespaceMode.DontIgnoreWhitespace } };
+
+            startDate = startDate ?? DateTimeOffset.MinValue;
+            endDate = endDate ?? DateTimeOffset.MaxValue;
+
+            var filteredCommits = branchName == null
+                ? repository.Commits.Where(x => x.Author.When >= startDate && x.Author.When <= endDate)
+                : repository.Branches[branchName].Commits.Where(x => x.Author.When >= startDate && x.Author.When <= endDate);
+
+            foreach (var commit in filteredCommits)
+            {
+                var commitMonth = new DateTime(commit.Author.When.Year, commit.Author.When.Month, 1);
+                if (!authorMonthlyChanges.ContainsKey(commitMonth))
+                    authorMonthlyChanges[commitMonth] = new Dictionary<string, (int LinesAdded, int LinesDeleted)>();
+
+                int linesAdded = 0;
+                int linesDeleted = 0;
+
+                var parent = commit.Parents.FirstOrDefault();
+                if (parent == null)
+                {
+                    // Initial commit
+                    linesAdded = GetCommitLineCount(commit);
+                }
+                else
+                {
+                    var patch = repository.Diff.Compare<Patch>(parent.Tree, commit.Tree, compareOptions);
+                    linesAdded = patch.Where(x => (validExtensions == null || !validExtensions.Any()) || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesAdded) ?? 0;
+                    linesDeleted = patch.Where(x => (validExtensions == null || !validExtensions.Any()) || validExtensions.Contains(Path.GetExtension(x.Path)))?.Sum(change => change.LinesDeleted) ?? 0;
+
+                }
+
+                if (!authorMonthlyChanges[commitMonth].ContainsKey(commit.Author.Name))
+                    authorMonthlyChanges[commitMonth][commit.Author.Name] = (0, 0);
+
+                authorMonthlyChanges[commitMonth][commit.Author.Name] = (authorMonthlyChanges[commitMonth][commit.Author.Name].LinesAdded + linesAdded, authorMonthlyChanges[commitMonth][commit.Author.Name].LinesDeleted + linesDeleted);
+            }
+
+            return new Dictionary<DateTime, Dictionary<string, (int LinesAdded, int LinesDeleted)>>(authorMonthlyChanges.OrderBy(x => x.Key));
         }
     }
 
