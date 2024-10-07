@@ -95,7 +95,6 @@
         return result ? result.data.json : null;
     };
 
-
     const showChart = (json) => {
         const resultJson = JSON.parse(json);
         chartData.value = resultJson;
