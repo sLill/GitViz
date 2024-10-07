@@ -12,6 +12,7 @@ const props = defineProps({
 const chartRef = ref(null);
 const chartContainer = ref(null);
 let resizeObserver;
+let svg, xScale, yScale, xAxis, yAxis, chartContent;
 
 // Methods
 const setupResizeObserver = () => {
@@ -26,7 +27,7 @@ const setupResizeObserver = () => {
 
 const drawChart = () => {
   if (!chartContainer.value) 
-  return;
+    return;
 
   const containerRect = chartContainer.value.getBoundingClientRect();
   const width = containerRect.width;
@@ -51,18 +52,26 @@ const drawChart = () => {
   d3.select(chartRef.value).selectAll("*").remove();
 
   // Create SVG
-  const svg = d3.select(chartRef.value)
+  svg = d3.select(chartRef.value)
     .append("svg")
     .attr("width", width)
-    .attr("height", height)
-    .append("g")
+    .attr("height", height);
+
+  // Add a rect to capture zoom events
+  svg.append('rect')
+    .attr('width', width)
+    .attr('height', height)
+    .style('fill', 'none')
+    .style('pointer-events', 'all');
+
+  const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   // Add a subtle gradient background
-  svg.append("rect")
+  g.append("rect")
     .attr("width", chartWidth)
     .attr("height", chartHeight)
-    .attr("fill", "url(bg-gradient)");
+    .attr("fill", "transparent");
 
   // Define gradient
   const gradient = svg.append("defs")
@@ -82,54 +91,66 @@ const drawChart = () => {
     .attr("stop-color", "#ffffff");
 
   // Set up scales
-  const x = d3.scaleTime()
+  xScale = d3.scaleTime()
     .domain(d3.extent(processedData, d => d.date))
     .range([0, chartWidth]);
 
-  const y = d3.scaleLinear()
+  yScale = d3.scaleLinear()
     .domain([0, d3.max(processedData, d => Math.max(d.item1, d.item2))])
     .range([chartHeight, 0]);
 
+  // Create clip path
+  g.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", chartWidth)
+    .attr("height", chartHeight);
+
+  // Create chart content group
+  chartContent = g.append("g")
+    .attr("clip-path", "url(#clip)");
+
   // Create lines
   const line1 = d3.line()
-    .x(d => x(d.date))
-    .y(d => y(d.item1))
+    .x(d => xScale(d.date))
+    .y(d => yScale(d.item1))
     .curve(d3.curveCatmullRom.alpha(0.5));
 
   // Add lines to chart with transition
-  const path1 = svg.append("path")
+  const path1 = chartContent.append("path")
     .datum(processedData)
     .attr("fill", "none")
     .attr("stroke", "#3b82f6")
     .attr("stroke-width", 3)
     .attr("d", line1);
 
-  const totalLength1 = path1.node().getTotalLength();
-  path1.attr("stroke-dasharray", totalLength1 + " " + totalLength1)
-    .attr("stroke-dashoffset", totalLength1)
-    .transition()
-    .duration(2000)
-    .ease(d3.easeLinear)
-    .attr("stroke-dashoffset", 0);
+  // const totalLength1 = path1.node().getTotalLength();
+  // path1.attr("stroke-dasharray", totalLength1 + " " + totalLength1)
+  //   .attr("stroke-dashoffset", totalLength1)
+    // .transition()
+    // .duration(2000)
+    // .ease(d3.easeLinear)
+    //.attr("stroke-dashoffset", 0);
 
   // Add axes
-  svg.append("g")
+  xAxis = g.append("g")
     .attr("transform", `translate(0,${chartHeight})`)
-    .call(d3.axisBottom(x))
-    .attr("class", "axis")
-    .selectAll("text")
+    .call(d3.axisBottom(xScale))
+    .attr("class", "axis");
+
+  xAxis.selectAll("text")
     .attr("y", 10)
     .attr("x", 9)
     .attr("dy", ".35em")
     .attr("transform", "rotate(45)")
     .style("text-anchor", "start");
 
-  svg.append("g")
-    .call(d3.axisLeft(y))
+  yAxis = g.append("g")
+    .call(d3.axisLeft(yScale))
     .attr("class", "axis");
 
   // Add y-axis label
-  svg.append('text')
+  g.append('text')
     .attr('class', 'y-axis-label')
     .attr('text-anchor', 'middle')
     .attr('transform', 'rotate(-90)')
@@ -140,12 +161,12 @@ const drawChart = () => {
     .text('Lines of Code');
 
   // Add data points
-  svg.selectAll(".dot1")
+  chartContent.selectAll(".dot1")
     .data(processedData)
     .enter().append("circle")
     .attr("class", "dot1")
-    .attr("cx", d => x(d.date))
-    .attr("cy", d => y(d.item1))
+    .attr("cx", d => xScale(d.date))
+    .attr("cy", d => yScale(d.item1))
     .attr("r", 5)
     .attr("fill", "#3b82f6")
     .on("mouseover", function(event, d) {
@@ -165,7 +186,7 @@ const drawChart = () => {
     });
 
   // Add legend
-  const legend = svg.append("g")
+  const legend = g.append("g")
     .attr("font-family", "sans-serif")
     .attr("font-size", 10)
     .attr("text-anchor", "end")
@@ -188,20 +209,36 @@ const drawChart = () => {
     .style("font-size", "16px")
     .text(d => d);
 
-  // Add chart title
-  // svg.append("text")
-  //   .attr("x", chartWidth / 2)
-  //   .attr("y", -margin.top / 2)
-  //   .attr("text-anchor", "middle")
-  //   .style("font-size", "16px")
-  //   .style("font-weight", "bold")
-  //   .style("fill", "white")
-  //   .text("R50 Code Velocity");
-
   // Add tooltip
-  const tooltip = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
+  // const tooltip = d3.select("body").append("div")
+  //   .attr("class", "tooltip")
+  //   .style("opacity", 0);
+
+  // Add zoom behavior
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 10])
+    .extent([[0, 0], [width, height]])
+    .on('zoom', zoomed);
+
+  svg.call(zoom);
+
+  function zoomed(event) {
+    const newXScale = event.transform.rescaleX(xScale);
+    const newYScale = event.transform.rescaleY(yScale);
+    
+    xAxis.call(d3.axisBottom(newXScale));
+    yAxis.call(d3.axisLeft(newYScale));
+    
+    path1.attr('d', d3.line()
+      .x(d => newXScale(d.date))
+      .y(d => newYScale(d.item1))
+      .curve(d3.curveCatmullRom.alpha(0.5))
+    );
+
+    chartContent.selectAll('.dot1')
+      .attr('cx', d => newXScale(d.date))
+      .attr('cy', d => newYScale(d.item1));
+  }
 };
 
 onMounted(() => {

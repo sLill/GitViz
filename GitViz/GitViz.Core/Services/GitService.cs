@@ -13,25 +13,5 @@ public class GitService : IGitService
     {
         return GitUtils.GetAuthorMonthlyChanges(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
     }
-
-    //private RepositoryCache? GetRepositoryCache(string repositoryPath, string? branchName = null)
-    //{
-    //    RepositoryCache repositoryCache = null;
-
-    //    string cacheFilename = GetCachedFilename(repositoryPath, branchName);
-    //    if (File.Exists(cacheFilename))
-    //    {
-    //        string serializedData = File.ReadAllText(cacheFilename);
-    //        repositoryCache = JsonConvert.DeserializeObject<RepositoryCache>(serializedData);
-    //    }
-
-    //    return repositoryCache;
-    //}
-
-    //private string GetCachedFilename(string repositoryPath, string? branchName = null)
-    //{
-    //    string repositoryIdentifier = GitUtils.GetRepositoryIdentifier(repositoryPath);
-    //    return string.IsNullOrEmpty(branchName) ? $"{repositoryPath}_{branchName}_{repositoryIdentifier}" : $"{repositoryPath}_{repositoryIdentifier}";
-    //}
     #endregion Methods..
 }

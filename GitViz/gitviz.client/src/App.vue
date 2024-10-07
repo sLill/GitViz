@@ -143,7 +143,7 @@
         </div>
 
         <div v-if="viewMode == 'loading'" class="loading-container">
-            <div style="font-size: 24px;">Loading..</div>
+            <div style="font-size: 24px;">Loading. This may take some time..</div>
         </div>
 
         <div v-if="viewMode == 'stats'" class="stats-container">
