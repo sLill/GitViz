@@ -20,6 +20,7 @@
     const branchName = ref(null);
     const startDate = ref();
     const endDate = ref();
+    const ignoreWhitespace = ref(true);
     const fileExtensions = ref(null);
 
     // Methods
@@ -51,7 +52,7 @@
     };
 
     const getOverallVelocity = async () => {
-        let uri = `/api/v1/repo/getOverallVelocity?localRepoPath=${localRepoPath.value}`;
+        let uri = `/api/v1/repo/getOverallVelocity?localRepoPath=${localRepoPath.value}&ignoreWhitespace=${ignoreWhitespace.value}`;
         
         if (branchName.value)
             uri += `&branchName=${branchName.value}`;
@@ -73,7 +74,7 @@
     };
 
     const getAuthorVelocity = async () => {
-        let uri = `/api/v1/repo/getAuthorVelocity?localRepoPath=${localRepoPath.value}`;
+        let uri = `/api/v1/repo/getAuthorVelocity?localRepoPath=${localRepoPath.value}&ignoreWhitespace=${ignoreWhitespace.value}`;
         
         if (branchName.value)
             uri += `&branchName=${branchName.value}`;
@@ -108,7 +109,7 @@
     <div class="wrapper">
         <div class="visualization-container">
             <div style="font-size: 20px;">Visualization</div>
-            <Dropdown style="width: 100%" :options="graphOptions" v-model="selectedGraph" placeholder="Select a Graph"></Dropdown>
+            <Dropdown style="width: 100%" :options="graphOptions" v-model="selectedGraph" placeholder="Select a Graph" v-on:change="viewMode = 'init'"></Dropdown>
         </div>
 
         <div v-if="viewMode == 'init'" class="init-container"> 
@@ -116,16 +117,28 @@
             <div style="font-size: 20px;">Local Repo Path</div>
             <InputText style="width: 100%" v-model="localRepoPath"></InputText>
 
-            <div style="font-size: 20px;">Branch Name (optional)</div>
-            <InputText style="width: 100%" v-model="branchName"></InputText>
+            <div style="font-size: 20px;">Branch Name</div>
+            <InputText style="width: 100%" v-model="branchName" placeholder="-- optional --"></InputText>
 
-            <div style="font-size: 20px;">File Extensions (space delimited. default: all)</div>
-            <InputText style="width: 100%" v-model="fileExtensions"></InputText>
+            <div style="font-size: 20px;">File Extensions (space delimited)</div>
+            <InputText style="width: 100%" v-model="fileExtensions" placeholder="-- optional (default: all) --"></InputText>
 
             <div style="display: flex; gap: 10px">
-                <DatePicker placeholder="Start Date (optional)" v-model="startDate" />
-                <DatePicker placeholder="End Date (optional)" v-model="endDate" />
+                <div>
+                    <div style="font-size: 20px; margin-bottom: 10px;">Start Date</div>
+                    <DatePicker placeholder="-- optional --" v-model="startDate" />
+                </div>
+
+                <div>
+                    <div style="font-size: 20px; margin-bottom: 10px;">End Date</div>
+                    <DatePicker placeholder="-- optional --" v-model="endDate" />
+                </div>
             </div>
+
+            <div style="display: flex;">
+                <Checkbox v-model="ignoreWhitespace" :binary="true" />
+                <div style="margin: 0 0 0 10px;">Ignore Whitespace</div>
+            </div> 
 
             <Button style="width: 100px; align-self: center" @click="start">Start</Button>
         </div>

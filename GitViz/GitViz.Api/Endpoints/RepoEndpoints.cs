@@ -34,6 +34,7 @@ public static class RepoEndpoints
                                                                        [FromQuery] string? branchName,
                                                                        [FromQuery] DateTimeOffset? startDate,
                                                                        [FromQuery] DateTimeOffset? endDate,
+                                                                       [FromQuery] bool ignoreWhitespace,
                                                                        [FromQuery] string[]? fileExtensions,
                                                                        [FromServices] IGitService gitService) =>
         {
@@ -42,7 +43,7 @@ public static class RepoEndpoints
 
             try
             {
-                var changesByMonth = gitService.GetOverallVelocityByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
+                var changesByMonth = gitService.GetOverallVelocityByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
                 responseData = new GetOverallVelocityResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
             }
             catch (Exception ex)
@@ -64,6 +65,7 @@ public static class RepoEndpoints
                                                                        [FromQuery] string? branchName,
                                                                        [FromQuery] DateTimeOffset? startDate,
                                                                        [FromQuery] DateTimeOffset? endDate,
+                                                                       [FromQuery] bool ignoreWhitespace,
                                                                        [FromQuery] string[]? fileExtensions,
                                                                        [FromServices] IGitService gitService) =>
         {
@@ -72,7 +74,7 @@ public static class RepoEndpoints
 
             try
             {
-                var authorChangesByMonth = gitService.GetAuthorVelocitiesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, true);
+                var authorChangesByMonth = gitService.GetAuthorVelocitiesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
                 responseData = new GetAuthorVelocityResponse() { Json = JsonConvert.SerializeObject(authorChangesByMonth) };
             }
             catch (Exception ex)
