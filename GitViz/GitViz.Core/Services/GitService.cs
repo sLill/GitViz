@@ -5,13 +5,19 @@ public class GitService : IGitService
     public Dictionary<DateTime, (int LinesAdded, int LinesDeleted)> GetOverallVelocityByMonth(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
         string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
     {
-        return GitUtils.GetOverallMonthlyChanges(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
+        return GitUtils.GetOverallChangesByMonth(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
     }
 
-    public Dictionary<DateTime, Dictionary<string, (int LinesAdded, int LinesDeleted)>> GetAuthorVelocitiesByMonth(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+    public Dictionary<DateTime, Dictionary<string, (int LinesAdded, int LinesDeleted)>> GetAuthorVelocityByMonth(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
       string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
     {
-        return GitUtils.GetAuthorMonthlyChanges(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
+        return GitUtils.GetAuthorChangesByMonth(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
+    }
+
+    public Dictionary<string, (int LinesAdded, int LinesDeleted)> GetAuthorVelocityAllTime(string repositoryPath, DateTimeOffset? startDate, DateTimeOffset? endDate,
+        string[]? validExtensions = null, string? branchName = null, bool excludeWhitespace = true)
+    {
+        return GitUtils.GetAuthorChangesAllTime(repositoryPath, startDate, endDate, validExtensions, branchName, excludeWhitespace);
     }
     #endregion Methods..
 }

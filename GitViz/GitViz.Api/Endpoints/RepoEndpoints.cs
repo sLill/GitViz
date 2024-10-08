@@ -11,7 +11,8 @@ public static class RepoEndpoints
     {
         endpoints.Ping();
         endpoints.GetOverallVelocity();
-        endpoints.GetAuthorVelocity();
+        endpoints.GetAuthorVelocityByMonth();
+        endpoints.GetAuthorVelocityAllTime();
     }
 
     public static void Ping(this IEndpointRouteBuilder endpoints)
@@ -44,7 +45,7 @@ public static class RepoEndpoints
             try
             {
                 var changesByMonth = gitService.GetOverallVelocityByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
-                responseData = new GetOverallVelocityResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
+                responseData = new JsonResponse() { Json = JsonConvert.SerializeObject(changesByMonth) };
             }
             catch (Exception ex)
             {
@@ -54,14 +55,14 @@ public static class RepoEndpoints
             return Results.Json(responseData, statusCode: (int)httpStatusCode);
         })
         .AllowAnonymous()
-        .Produces<GetOverallVelocityResponse>()
+        .Produces<JsonResponse>()
         .WithName(nameof(GetOverallVelocity))
         .WithTags(_tag);
     }
 
-    public static void GetAuthorVelocity(this IEndpointRouteBuilder endpoints)
+    public static void GetAuthorVelocityByMonth(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet($"{_basePath}/getAuthorVelocity", async ([FromQuery] string localRepoPath,
+        endpoints.MapGet($"{_basePath}/getAuthorVelocityByMonth", async ([FromQuery] string localRepoPath,
                                                                        [FromQuery] string? branchName,
                                                                        [FromQuery] DateTimeOffset? startDate,
                                                                        [FromQuery] DateTimeOffset? endDate,
@@ -74,8 +75,8 @@ public static class RepoEndpoints
 
             try
             {
-                var authorChangesByMonth = gitService.GetAuthorVelocitiesByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
-                responseData = new GetAuthorVelocityResponse() { Json = JsonConvert.SerializeObject(authorChangesByMonth) };
+                var authorChangesByMonth = gitService.GetAuthorVelocityByMonth(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
+                responseData = new JsonResponse() { Json = JsonConvert.SerializeObject(authorChangesByMonth) };
             }
             catch (Exception ex)
             {
@@ -85,8 +86,39 @@ public static class RepoEndpoints
             return Results.Json(responseData, statusCode: (int)httpStatusCode);
         })
         .AllowAnonymous()
-        .Produces<GetAuthorVelocityResponse>()
-        .WithName(nameof(GetAuthorVelocity))
+        .Produces<JsonResponse>()
+        .WithName(nameof(GetAuthorVelocityByMonth))
+        .WithTags(_tag);
+    }    
+    
+    public static void GetAuthorVelocityAllTime(this IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapGet($"{_basePath}/getAuthorVelocityAllTime", async ([FromQuery] string localRepoPath,
+                                                                       [FromQuery] string? branchName,
+                                                                       [FromQuery] DateTimeOffset? startDate,
+                                                                       [FromQuery] DateTimeOffset? endDate,
+                                                                       [FromQuery] bool ignoreWhitespace,
+                                                                       [FromQuery] string[]? fileExtensions,
+                                                                       [FromServices] IGitService gitService) =>
+        {
+            var httpStatusCode = HttpStatusCode.OK;
+            object? responseData = null;
+
+            try
+            {
+                var authorChangesAllTime = gitService.GetAuthorVelocityAllTime(localRepoPath, startDate, endDate, fileExtensions, branchName, ignoreWhitespace);
+                responseData = new JsonResponse() { Json = JsonConvert.SerializeObject(authorChangesAllTime) };
+            }
+            catch (Exception ex)
+            {
+                httpStatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return Results.Json(responseData, statusCode: (int)httpStatusCode);
+        })
+        .AllowAnonymous()
+        .Produces<JsonResponse>()
+        .WithName(nameof(GetAuthorVelocityAllTime))
         .WithTags(_tag);
     }
     #endregion Methods..

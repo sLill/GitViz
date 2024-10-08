@@ -1,7 +1,8 @@
 <script setup>
     import { ref } from 'vue';
     import D3OverallVelocity from '/src/components/D3/D3OverallVelocity.vue';
-    import D3AuthorVelocity from '/src/components/D3/D3AuthorVelocity.vue';
+    import D3AuthorVelocityByMonth from '/src/components/D3/D3AuthorVelocityByMonth.vue';
+    import D3AuthorVelocityAllTime from '/src/components/D3/D3AuthorVelocityAllTime.vue';
     import useEndpointService from './composables/services/useEndpointService.js';
     import useDialogService from './composables/services/useDialogService.js';
     import { useToast } from 'primevue/usetoast';
@@ -13,7 +14,7 @@
     const viewMode = ref('init');
     const chartData = ref(null);
     
-    const graphOptions = ref([null, 'Overall Velocity', 'Author Velocity']);
+    const graphOptions = ref([null, 'Overall Velocity', 'Author Velocity (By Month)', 'Author Velocity (All Time)']);
     const selectedGraph = ref(null);
     
     const localRepoPath = ref(null);
@@ -43,8 +44,13 @@
             case 'Overall Velocity':
                 data = await getOverallVelocity();
             break;
-            case 'Author Velocity':
-                data = await getAuthorVelocity();
+            
+            case 'Author Velocity (By Month)':
+                data = await getAuthorVelocityByMonth();
+            break;
+
+            case 'Author Velocity (All Time)':
+                data = await getAuthorVelocityAllTime();
             break;
         }
 
@@ -73,8 +79,30 @@
         return result ? result.data.json : null;
     };
 
-    const getAuthorVelocity = async () => {
-        let uri = `/api/v1/repo/getAuthorVelocity?localRepoPath=${localRepoPath.value}&ignoreWhitespace=${ignoreWhitespace.value}`;
+    const getAuthorVelocityByMonth = async () => {
+        let uri = `/api/v1/repo/getAuthorVelocityByMonth?localRepoPath=${localRepoPath.value}&ignoreWhitespace=${ignoreWhitespace.value}`;
+        
+        if (branchName.value)
+            uri += `&branchName=${branchName.value}`;
+
+        if (startDate.value)
+            uri += `&startDate=${startDate.value.toISOString()}`;
+
+        if (endDate.value)
+            uri += `&endDate=${endDate.value.toISOString()}`;
+
+        if (fileExtensions.value) {
+            fileExtensions.value.split(" ").forEach(extension => {
+                uri += `&fileExtensions=${extension}`;
+            });
+        }
+
+        const result = await endpointService.getData(uri);
+        return result ? result.data.json : null;
+    };
+
+    const getAuthorVelocityAllTime = async () => {
+        let uri = `/api/v1/repo/getAuthorVelocityAllTime?localRepoPath=${localRepoPath.value}&ignoreWhitespace=${ignoreWhitespace.value}`;
         
         if (branchName.value)
             uri += `&branchName=${branchName.value}`;
@@ -148,7 +176,8 @@
 
         <div v-if="viewMode == 'stats'" class="stats-container">
             <D3OverallVelocity v-if="selectedGraph == 'Overall Velocity'" :data="chartData" />
-            <D3AuthorVelocity v-if="selectedGraph == 'Author Velocity'" :data="chartData" />
+            <D3AuthorVelocityByMonth v-if="selectedGraph == 'Author Velocity (By Month)'" :data="chartData" />
+            <D3AuthorVelocityAllTime v-if="selectedGraph == 'Author Velocity (All Time)'" :data="chartData" />
         </div>
     </div>
 
